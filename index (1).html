@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payment Registration Form</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --ink: #1a1a1a;
+    --paper: #faf8f5;
+    --cream: #f3efe8;
+    --accent: #b8860b;
+    --accent-light: #d4a83a;
+    --muted: #8a8072;
+    --border: #d6cfc3;
+    --error: #c0392b;
+    --success: #27ae60;
+    --font-display: 'DM Serif Display', Georgia, serif;
+    --font-body: 'DM Sans', -apple-system, sans-serif;
+  }
+
+  html { font-size: 16px; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .progress-bar {
+    position: fixed; top: 0; left: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-light));
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 100;
+    box-shadow: 0 0 12px rgba(184, 134, 11, 0.3);
+  }
+
+  .header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    padding: 1.5rem 2.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(to bottom, var(--paper) 60%, transparent);
+  }
+
+  .logo { display: flex; align-items: center; gap: 0.75rem; }
+
+  .logo-icon {
+    width: 36px; height: 36px; background: var(--ink); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--paper); font-family: var(--font-display);
+    font-size: 1.1rem; letter-spacing: -0.03em;
+  }
+
+  .logo-text {
+    font-family: var(--font-display); font-size: 1.15rem;
+    letter-spacing: -0.02em; color: var(--ink);
+  }
+
+  .step-counter {
+    font-size: 0.8rem; color: var(--muted); font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+
+  .form-container {
+    position: relative; z-index: 1; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .step {
+    position: absolute; width: 100%; max-width: 620px; padding: 0 2rem;
+    opacity: 0; transform: translateY(40px); pointer-events: none;
+    transition: all 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .step.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .step.exit-up { opacity: 0; transform: translateY(-40px); pointer-events: none; }
+
+  .step-number { display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem; }
+  .step-number span { font-size: 0.85rem; font-weight: 600; color: var(--accent); letter-spacing: 0.02em; }
+  .step-number .arrow { color: var(--accent); font-size: 0.85rem; }
+
+  .question-title {
+    font-family: var(--font-display); font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+    line-height: 1.3; color: var(--ink); margin-bottom: 0.65rem; letter-spacing: -0.02em;
+  }
+
+  .question-desc {
+    font-size: 0.95rem; line-height: 1.6; color: var(--muted);
+    margin-bottom: 0.5rem; max-width: 520px;
+  }
+
+  .question-desc:last-of-type { margin-bottom: 2rem; }
+
+  .question-desc-secondary {
+    font-size: 0.88rem; line-height: 1.6; color: var(--muted);
+    margin-bottom: 2rem; max-width: 520px; opacity: 0.85;
+  }
+
+  .question-desc .emoji { margin-right: 0.25rem; }
+
+  .input-wrapper { position: relative; margin-bottom: 2rem; }
+
+  .input-field {
+    width: 100%; padding: 1rem 0; font-family: var(--font-body);
+    font-size: 1.15rem; color: var(--ink); background: transparent;
+    border: none; border-bottom: 2px solid var(--border); outline: none;
+    transition: border-color 0.3s ease; letter-spacing: 0.01em;
+  }
+
+  .input-field::placeholder { color: #c4bbad; font-weight: 300; }
+  .input-field:focus { border-bottom-color: var(--accent); }
+  .input-field.error { border-bottom-color: var(--error); }
+
+  .phone-wrapper { display: flex; align-items: center; gap: 0.75rem; }
+
+  .phone-prefix {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.75rem 0.9rem; background: var(--cream); border-radius: 8px;
+    font-size: 0.95rem; color: var(--ink); cursor: default;
+    white-space: nowrap; border: 1px solid var(--border);
+    font-weight: 500; flex-shrink: 0; position: relative;
+  }
+
+  .phone-prefix select { position: absolute; inset: 0; opacity: 0; cursor: pointer; font-size: 1rem; }
+  .phone-prefix .flag { font-size: 1.2rem; }
+  .phone-prefix .code { color: var(--ink); }
+  .phone-prefix .chevron { font-size: 0.65rem; color: var(--muted); margin-left: 0.15rem; }
+  .phone-wrapper .input-field { flex: 1; }
+
+  .error-msg {
+    display: none; font-size: 0.8rem; color: var(--error);
+    margin-top: 0.5rem; font-weight: 500; align-items: center; gap: 0.35rem;
+  }
+  .error-msg.visible { display: flex; }
+
+  .btn-row { display: flex; align-items: center; gap: 1rem; }
+
+  .btn-next {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    padding: 0.85rem 2rem; background: var(--ink); color: var(--paper);
+    border: none; border-radius: 8px; font-family: var(--font-body);
+    font-size: 0.95rem; font-weight: 500; cursor: pointer;
+    transition: all 0.25s ease; letter-spacing: 0.02em;
+  }
+
+  .btn-next:hover { background: #2d2d2d; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+  .btn-next:active { transform: translateY(0); }
+  .btn-next .arrow-icon { transition: transform 0.2s ease; }
+  .btn-next:hover .arrow-icon { transform: translateX(2px); }
+  .btn-next.loading { pointer-events: none; opacity: 0.7; }
+
+  .hint { font-size: 0.78rem; color: var(--muted); margin-left: 0.5rem; font-weight: 400; }
+
+  .hint kbd {
+    display: inline-block; padding: 0.1rem 0.45rem; border: 1px solid var(--border);
+    border-radius: 4px; font-size: 0.72rem; font-family: var(--font-body);
+    background: white; color: var(--muted); margin: 0 0.15rem;
+  }
+
+  .thank-you { text-align: center; }
+
+  .checkmark-ring {
+    width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--success);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.5rem;
+    animation: ringIn 0.5s 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  @keyframes ringIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+
+  .checkmark-ring svg {
+    width: 36px; height: 36px; stroke: var(--success);
+    stroke-dasharray: 50; stroke-dashoffset: 50;
+    animation: drawCheck 0.4s 0.5s ease-out forwards;
+  }
+  @keyframes drawCheck { to { stroke-dashoffset: 0; } }
+
+  .thank-you .question-title { margin-bottom: 0.75rem; }
+  .thank-you .question-desc { max-width: 400px; margin: 0 auto; text-align: center; }
+
+  .footer-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    padding: 1.25rem 2.5rem; display: flex; align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(to top, var(--paper) 60%, transparent); z-index: 50;
+  }
+
+  .footer-nav .nav-arrows { display: flex; gap: 0.4rem; }
+
+  .nav-btn {
+    width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+    border: 1.5px solid var(--border); background: white; border-radius: 6px;
+    cursor: pointer; transition: all 0.2s ease; color: var(--muted);
+  }
+  .nav-btn:hover:not(:disabled) { border-color: var(--ink); color: var(--ink); }
+  .nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .nav-btn svg { width: 16px; height: 16px; }
+
+  .powered-by { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.04em; }
+
+  .deco-line {
+    position: fixed; left: 2.5rem; top: 50%; transform: translateY(-50%);
+    width: 1px; height: 120px;
+    background: linear-gradient(to bottom, transparent, var(--border), transparent); z-index: 0;
+  }
+
+  .required { color: var(--error); margin-left: 0.15rem; }
+
+  .field-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 22px; height: 22px; background: var(--accent); color: white;
+    border-radius: 5px; font-size: 0.72rem; font-weight: 600;
+  }
+
+  .submit-error {
+    position: fixed; bottom: 5rem; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--error); color: white; padding: 0.75rem 1.5rem;
+    border-radius: 8px; font-size: 0.85rem; font-weight: 500;
+    opacity: 0; pointer-events: none; transition: all 0.3s ease;
+    z-index: 200; box-shadow: 0 4px 20px rgba(192, 57, 43, 0.3);
+  }
+  .submit-error.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 640px) {
+    .header { padding: 1rem 1.25rem; }
+    .footer-nav { padding: 1rem 1.25rem; }
+    .step { padding: 0 1.25rem; }
+    .deco-line { display: none; }
+    .hint { display: none; }
+    .question-title { font-size: 1.5rem; }
+  }
+
+  .input-field:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 2px; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar" style="width: 0%"></div>
+<div class="deco-line"></div>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">R</div>
+    <span class="logo-text">Registration</span>
+  </div>
+  <div class="step-counter" id="stepCounter">Step 1 of 7</div>
+</header>
+
+<form id="mainForm" class="form-container" novalidate>
+
+  <!-- Step 1: Full Name -->
+  <div class="step active" data-step="1">
+    <div class="step-number"><span class="field-badge">1</span><span class="arrow">→</span></div>
+    <h2 class="question-title">Full Name<span class="required">*</span></h2>
+    <p class="question-desc"><span class="emoji">👉</span>Fill out this information to receive your payments.</p>
+    <div class="input-wrapper">
+      <input type="text" class="input-field" id="fullName" placeholder="Type your answer here..." autocomplete="name" required>
+      <div class="error-msg" id="err-fullName"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> This field is required</div>
+    </div>
+    <div class="btn-row">
+      <button type="button" class="btn-next" onclick="nextStep(1)">OK <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+      <span class="hint">press <kbd>Enter</kbd> ↵</span>
+    </div>
+  </div>
+
+  <!-- Step 2: Telegram @username -->
+  <div class="step" data-step="2">
+    <div class="step-number"><span class="field-badge">2</span><span class="arrow">→</span></div>
+    <h2 class="question-title">Telegram @username<span class="required">*</span></h2>
+    <p class="question-desc"><span class="emoji">👉</span>@username — all lowercase</p>
+    <p class="question-desc-secondary">Please enter the exact same Telegram username you used when joining the ARC program. Otherwise, we won't be able to match your profile and process your payments.</p>
+    <div class="input-wrapper">
+      <input type="text" class="input-field" id="telegramUsername" placeholder="Type your answer here..." required>
+      <div class="error-msg" id="err-telegramUsername"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> This field is required</div>
+    </div>
+    <div class="btn-row">
+      <button type="button" class="btn-next" onclick="nextStep(2)">OK <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+      <span class="hint">press <kbd>Enter</kbd> ↵</span>
+    </div>
+  </div>
+
+  <!-- Step 3: Referrer's @Telegram username -->
+  <div class="step" data-step="3">
+    <div class="step-number"><span class="field-badge">3</span><span class="arrow">→</span></div>
+    <h2 class="question-title">Referrer's @Telegram username<span class="required">*</span></h2>
+    <p class="question-desc">If someone referred you, write their @username. If not, leave it blank.</p>
+    <div class="input-wrapper">
+      <input type="text" class="input-field" id="referrer" placeholder="Type your answer here..." required>
+      <div class="error-msg" id="err-referrer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> This field is required</div>
+    </div>
+    <div class="btn-row">
+      <button type="button" class="btn-next" onclick="nextStep(3)">OK <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+      <span class="hint">press <kbd>Enter</kbd> ↵</span>
+    </div>
+  </div>
+
+  <!-- Step 4: Amazon Account Name -->
+  <div class="step" data-step="4">
+    <div class="step-number"><span class="field-badge">4</span><span class="arrow">→</span></div>
+    <h2 class="question-title">Amazon Account Name<span class="required">*</span></h2>
+    <p class="question-desc">This is your public name on Amazon. Please double-check before confirming. If you're unsure, leave it blank</p>
+    <div class="input-wrapper">
+      <input type="text" class="input-field" id="amazonName" placeholder="Type your answer here..." required>
+      <div class="error-msg" id="err-amazonName"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> This field is required</div>
+    </div>
+    <div class="btn-row">
+      <button type="button" class="btn-next" onclick="nextStep(4)">OK <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+      <span class="hint">press <kbd>Enter</kbd> ↵</span>
+    </div>
+  </div>
+
+  <!-- Step 5: PayPal Email -->
+  <div class="step" data-step="5">
+    <div class="step-number"><span class="field-badge">5</span><span class="arrow">→</span></div>
+    <h2 class="question-title">PayPal Email<span class="required">*</span></h2>
+    <p class="question-desc"><span class="emoji">👉</span>This will be the email used for all your payments. Make sure to provide the correct one. Only one PayPal email is allowed for payments.</p>
+    <div class="input-wrapper">
+      <input type="email" class="input-field" id="paypalEmail" placeholder="name@example.com" autocomplete="email" required>
+      <div class="error-msg" id="err-paypalEmail"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Please enter a valid email address</div>
+    </div>
+    <div class="btn-row">
+      <button type="button" class="btn-next" onclick="nextStep(5)">OK <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+      <span class="hint">press <kbd>Enter</kbd> ↵</span>
+    </div>
+  </div>
+
+  <!-- Step 6: WhatsApp Number -->
+  <div class="step" data-step="6">
+    <div class="step-number"><span class="field-badge">6</span><span class="arrow">→</span></div>
+    <h2 class="question-title">Whats App Number<span class="required">*</span></h2>
+    <p class="question-desc"><span class="emoji">👉</span>"If we have trouble reaching you, we may use this as an alternative contact channel."</p>
+    <div class="input-wrapper">
+      <div class="phone-wrapper">
+        <div class="phone-prefix">
+          <span class="flag" id="flagDisplay">🇺🇸</span>
+          <span class="code" id="codeDisplay">+1</span>
+          <span class="chevron">▼</span>
+          <select id="countrySelect" onchange="updatePhonePrefix()">
+            <option value="+1" data-flag="🇺🇸" selected>🇺🇸 USA (+1)</option>
+            <option value="+39" data-flag="🇮🇹">🇮🇹 Italy (+39)</option>
+            <option value="+44" data-flag="🇬🇧">🇬🇧 UK (+44)</option>
+            <option value="+49" data-flag="🇩🇪">🇩🇪 Germany (+49)</option>
+            <option value="+33" data-flag="🇫🇷">🇫🇷 France (+33)</option>
+            <option value="+34" data-flag="🇪🇸">🇪🇸 Spain (+34)</option>
+            <option value="+351" data-flag="🇵🇹">🇵🇹 Portugal (+351)</option>
+            <option value="+31" data-flag="🇳🇱">🇳🇱 Netherlands (+31)</option>
+            <option value="+32" data-flag="🇧🇪">🇧🇪 Belgium (+32)</option>
+            <option value="+41" data-flag="🇨🇭">🇨🇭 Switzerland (+41)</option>
+            <option value="+43" data-flag="🇦🇹">🇦🇹 Austria (+43)</option>
+            <option value="+48" data-flag="🇵🇱">🇵🇱 Poland (+48)</option>
+            <option value="+46" data-flag="🇸🇪">🇸🇪 Sweden (+46)</option>
+            <option value="+47" data-flag="🇳🇴">🇳🇴 Norway (+47)</option>
+            <option value="+45" data-flag="🇩🇰">🇩🇰 Denmark (+45)</option>
+            <option value="+30" data-flag="🇬🇷">🇬🇷 Greece (+30)</option>
+            <option value="+40" data-flag="🇷🇴">🇷🇴 Romania (+40)</option>
+            <option value="+385" data-flag="🇭🇷">🇭🇷 Croatia (+385)</option>
+            <option value="+36" data-flag="🇭🇺">🇭🇺 Hungary (+36)</option>
+            <option value="+420" data-flag="🇨🇿">🇨🇿 Czech Rep. (+420)</option>
+            <option value="+55" data-flag="🇧🇷">🇧🇷 Brazil (+55)</option>
+            <option value="+52" data-flag="🇲🇽">🇲🇽 Mexico (+52)</option>
+            <option value="+91" data-flag="🇮🇳">🇮🇳 India (+91)</option>
+            <option value="+86" data-flag="🇨🇳">🇨🇳 China (+86)</option>
+            <option value="+81" data-flag="🇯🇵">🇯🇵 Japan (+81)</option>
+            <option value="+82" data-flag="🇰🇷">🇰🇷 South Korea (+82)</option>
+            <option value="+61" data-flag="🇦🇺">🇦🇺 Australia (+61)</option>
+            <option value="+7" data-flag="🇷🇺">🇷🇺 Russia (+7)</option>
+            <option value="+90" data-flag="🇹🇷">🇹🇷 Turkey (+90)</option>
+            <option value="+966" data-flag="🇸🇦">🇸🇦 Saudi Arabia (+966)</option>
+            <option value="+971" data-flag="🇦🇪">🇦🇪 UAE (+971)</option>
+            <option value="+234" data-flag="🇳🇬">🇳🇬 Nigeria (+234)</option>
+            <option value="+27" data-flag="🇿🇦">🇿🇦 South Africa (+27)</option>
+            <option value="+20" data-flag="🇪🇬">🇪🇬 Egypt (+20)</option>
+            <option value="+54" data-flag="🇦🇷">🇦🇷 Argentina (+54)</option>
+            <option value="+56" data-flag="🇨🇱">🇨🇱 Chile (+56)</option>
+            <option value="+57" data-flag="🇨🇴">🇨🇴 Colombia (+57)</option>
+            <option value="+63" data-flag="🇵🇭">🇵🇭 Philippines (+63)</option>
+            <option value="+62" data-flag="🇮🇩">🇮🇩 Indonesia (+62)</option>
+            <option value="+60" data-flag="🇲🇾">🇲🇾 Malaysia (+60)</option>
+            <option value="+66" data-flag="🇹🇭">🇹🇭 Thailand (+66)</option>
+            <option value="+84" data-flag="🇻🇳">🇻🇳 Vietnam (+84)</option>
+          </select>
+        </div>
+        <input type="tel" class="input-field" id="whatsapp" placeholder="(201) 555-0123" autocomplete="tel" required>
+      </div>
+      <div class="error-msg" id="err-whatsapp"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Please enter a valid phone number</div>
+    </div>
+    <div class="btn-row">
+      <button type="button" class="btn-next" onclick="nextStep(6)">OK <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+      <span class="hint">press <kbd>Enter</kbd> ↵</span>
+    </div>
+  </div>
+
+  <!-- Step 7: Personal Mail -->
+  <div class="step" data-step="7">
+    <div class="step-number"><span class="field-badge">7</span><span class="arrow">→</span></div>
+    <h2 class="question-title">Personal Mail<span class="required">*</span></h2>
+    <p class="question-desc"><span class="emoji">👉</span>If we ever need to reach you outside of Telegram, we'll use this email as an additional contact option.</p>
+    <div class="input-wrapper">
+      <input type="email" class="input-field" id="personalMail" placeholder="name@example.com" autocomplete="email" required>
+      <div class="error-msg" id="err-personalMail"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Please enter a valid email address</div>
+    </div>
+    <div class="btn-row">
+      <button type="button" class="btn-next" id="submitBtn" onclick="submitForm()">Submit <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
+      <span class="hint">press <kbd>Enter</kbd> ↵</span>
+    </div>
+  </div>
+
+  <!-- Thank You -->
+  <div class="step" data-step="8">
+    <div class="thank-you">
+      <div class="checkmark-ring">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 12 10 16 18 8"/></svg>
+      </div>
+      <h2 class="question-title">Thanks for submitting your form! 🙌</h2>
+      <p class="question-desc">Your information has been received successfully. We'll be in touch soon.</p>
+    </div>
+  </div>
+
+</form>
+
+<div class="submit-error" id="submitError">Submission failed. Please try again.</div>
+
+<footer class="footer-nav">
+  <div class="nav-arrows">
+    <button type="button" class="nav-btn" id="navPrev" onclick="prevStep()" disabled aria-label="Previous">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button type="button" class="nav-btn" id="navNext" onclick="navNextStep()" aria-label="Next">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+  <span class="powered-by">Secure Registration Form</span>
+</footer>
+
+<script>
+  // ================================================================
+  //  ⚠️  SOSTITUISCI QUESTO URL CON IL TUO (vedi guida)
+  // ================================================================
+  const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+  // ================================================================
+
+  let currentStep = 1;
+  const totalSteps = 7;
+
+  const fields = {
+    1: { id: 'fullName',         type: 'text'  },
+    2: { id: 'telegramUsername',  type: 'text'  },
+    3: { id: 'referrer',         type: 'text'  },
+    4: { id: 'amazonName',       type: 'text'  },
+    5: { id: 'paypalEmail',      type: 'email' },
+    6: { id: 'whatsapp',         type: 'tel'   },
+    7: { id: 'personalMail',     type: 'email' },
+  };
+
+  function validate(step) {
+    const f = fields[step];
+    if (!f) return true;
+    const input = document.getElementById(f.id);
+    const err = document.getElementById('err-' + f.id);
+    const val = input.value.trim();
+    input.classList.remove('error');
+    err.classList.remove('visible');
+    if (!val) { input.classList.add('error'); err.classList.add('visible'); input.focus(); return false; }
+    if (f.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) { input.classList.add('error'); err.classList.add('visible'); input.focus(); return false; }
+    if (f.type === 'tel' && !/^[\d\s\-\(\)\+]{6,}$/.test(val)) { input.classList.add('error'); err.classList.add('visible'); input.focus(); return false; }
+    return true;
+  }
+
+  function goToStep(target) {
+    const cur = document.querySelector(`.step[data-step="${currentStep}"]`);
+    const nxt = document.querySelector(`.step[data-step="${target}"]`);
+    if (target > currentStep) {
+      cur.classList.remove('active'); cur.classList.add('exit-up');
+      setTimeout(() => cur.classList.remove('exit-up'), 550);
+    } else {
+      cur.classList.remove('active'); cur.style.opacity = '0'; cur.style.transform = 'translateY(40px)';
+      setTimeout(() => { cur.style.opacity = ''; cur.style.transform = ''; }, 550);
+    }
+    setTimeout(() => { nxt.classList.add('active'); const inp = nxt.querySelector('.input-field'); if (inp) setTimeout(() => inp.focus(), 100); }, 80);
+    currentStep = target;
+    updateUI();
+  }
+
+  function updateUI() {
+    const pct = currentStep <= totalSteps ? ((currentStep - 1) / totalSteps) * 100 : 100;
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('stepCounter').textContent = currentStep <= totalSteps ? `Step ${currentStep} of ${totalSteps}` : 'Complete';
+    document.getElementById('navPrev').disabled = currentStep <= 1;
+    document.getElementById('navNext').style.display = currentStep > totalSteps ? 'none' : '';
+  }
+
+  function nextStep(s) { if (!validate(s)) return; if (s < totalSteps) goToStep(s + 1); }
+  function prevStep() { if (currentStep > 1) goToStep(currentStep - 1); }
+  function navNextStep() { if (currentStep <= totalSteps) { currentStep === totalSteps ? submitForm() : nextStep(currentStep); } }
+
+  function showError(msg) {
+    const el = document.getElementById('submitError');
+    el.textContent = msg || 'Submission failed. Please try again.';
+    el.classList.add('visible');
+    setTimeout(() => el.classList.remove('visible'), 4000);
+  }
+
+  async function submitForm() {
+    if (!validate(currentStep)) return;
+    const btn = document.getElementById('submitBtn');
+    btn.classList.add('loading');
+    btn.innerHTML = 'Submitting… <span class="spinner"></span>';
+
+    const prefix = document.getElementById('codeDisplay').textContent;
+    const data = {
+      timestamp:        new Date().toISOString(),
+      fullName:         document.getElementById('fullName').value.trim(),
+      telegramUsername: document.getElementById('telegramUsername').value.trim(),
+      referrer:         document.getElementById('referrer').value.trim(),
+      amazonName:       document.getElementById('amazonName').value.trim(),
+      paypalEmail:      document.getElementById('paypalEmail').value.trim(),
+      whatsappNumber:   prefix + ' ' + document.getElementById('whatsapp').value.trim(),
+      personalMail:     document.getElementById('personalMail').value.trim(),
+    };
+
+    try {
+      await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      goToStep(8);
+      document.querySelector('.footer-nav').style.display = 'none';
+    } catch (err) {
+      console.error('Submit error:', err);
+      btn.classList.remove('loading');
+      btn.innerHTML = 'Submit <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+      showError('Connection error. Please check your internet and try again.');
+    }
+  }
+
+  function updatePhonePrefix() {
+    const sel = document.getElementById('countrySelect');
+    const opt = sel.options[sel.selectedIndex];
+    document.getElementById('flagDisplay').textContent = opt.getAttribute('data-flag');
+    document.getElementById('codeDisplay').textContent = sel.value;
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && currentStep <= totalSteps) { e.preventDefault(); currentStep === totalSteps ? submitForm() : nextStep(currentStep); }
+  });
+
+  window.addEventListener('DOMContentLoaded', () => { setTimeout(() => document.getElementById('fullName').focus(), 300); });
+</script>
+
+</body>
+</html>
